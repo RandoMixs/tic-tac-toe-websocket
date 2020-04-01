@@ -1,53 +1,13 @@
-const { uuid } = require('uuidv4');
-const express = require('express');
+const { checkgame, sample, replace } = require('./module'); // Alguns modulos usados
+const { uuid } = require('uuidv4'); // Nem precisaria usar, mas usei pra deixar mais organizado as ID's de cada jogo :)
+const express = require('express'); // Servidor para aplicativos Web
 const http = require('http');
-const WebSocket = require('ws');
-
-var procurando, jogando;
-
+const WebSocket = require('ws'); // Modulo do WebSocket pra fazer a comunicação do jogo com o servidor e a comunicação entre os players
 const app = express();
-app.get('/hello', function (req, res) {
-  res.send('Hi')
-})
-app.get('/info', function (req, res) {
-  res.send(JSON.stringify({"searching":procurando, "playing":jogando}))
-})
-app.use(express.static('html'));
-
 const server = http.createServer(app);
-
 const wss = new WebSocket.Server({ server });
 
-Array.prototype.sample = function(){
-  return this[Math.floor(Math.random()*this.length)];
-}
-
-Array.prototype.replace = function(t, v) {
-	if(this.indexOf(t)!= -1) this[this.map((e, i) => [i, e]).filter(e => e[1] == t)[0][0]] = v;
-}
-
-function checkgame(map) {
-	var result = false;
-	['x','o'].forEach(function(data) {
-		if(map[0] == data && map[1] == data && map[2] == data)
-			result = true;
-		if(map[3] == data && map[4] == data && map[5] == data)
-			result = true;
-		if(map[6] == data && map[7] == data && map[8] == data)
-			result = true;
-		if(map[0] == data && map[3] == data && map[6] == data)
-			result = true;
-		if(map[1] == data && map[4] == data && map[7] == data)
-			result = true;
-		if(map[2] == data && map[5] == data && map[8] == data)
-			result = true;
-		if(map[0] == data && map[4] == data && map[8] == data)
-			result = true;
-		if(map[6] == data && map[4] == data && map[2] == data)
-			result = true;
-	});
-	return result;
-}
+app.use(express.static('html'));
 
 var id = 0;
 var games = [];
@@ -134,6 +94,7 @@ wss.on('connection', function connection(ws) {
 });
 
 setInterval(function () {
+	// Verifica se todos os usuarios estão conectado com o servidor e caso alguma usuario não retorne o ping encerra a sessão
 	wss.clients.forEach(function each(ws) {
 		if (ws.isAlive == false) {
 			if(ws.opponent) {
@@ -153,14 +114,7 @@ setInterval(function () {
 			ws.send('Ping');
 		}
 	});
-}, 1500);
-
-server.listen(process.env.PORT || 80, () => {
-    console.log(`Servidor iniciado :)`);
-});
-
-// Matchmaking
-setInterval(function () {
+	// Faz o matchmaking
 	if(wss.clients.length == 0) return;
 	var last;
 	wss.clients.forEach(function each(client) {
@@ -187,18 +141,8 @@ setInterval(function () {
 			}
 		}
 	});
-}, 1000)
+}, 1500);
 
-// Console
-setInterval(function () {
-	var psm = 0;
-	wss.clients.forEach(function each(client) {
-		if(client.status == 'searching') psm++;
-	});
-	procurando = psm;
-	var psm = 0;
-	wss.clients.forEach(function each(client) {
-		if(client.status == 'found') psm++;
-	});
-	jogando = psm;
-}, 1000);
+server.listen(process.env.PORT || 80, () => {
+    console.log(`Servidor iniciado :)`);
+});
