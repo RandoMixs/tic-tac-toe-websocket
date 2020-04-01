@@ -1,0 +1,17 @@
+{
+  "name": "jogodavelha",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+	  "start": "node index.js"
+   },
+  "keywords": [],
+  "author": "Caio Junior (RandoMixs)",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.1",
+    "uuidv4": "^6.0.6",
+    "ws": "^7.2.3"
+  }
+}
