@@ -47,32 +47,27 @@ wss.on('connection', function connection(ws) {
 		if(found['map'][message]) ws.terminate();
 		update['map'][message] = ws.type;
 		games.replace(found, update);
-		if(checkgame(found['map']) == true) {
-			ws.send('{"status":"winner"}');
-			ws.opponent.send('{"status":"loser", "row":'+ message + '}');
+		var cg = checkgame(found['map']);
+		if(cg == "win" || cg == "tie") {
+			ws.send('{"status":"' + (cg == "win" ? "winner" : "tie" ) + '"}');
+			ws.opponent.send('{"status":"' + (cg == "win" ? "loser" : "tie" ) + '", "row":'+ message + '}');
 			ws.opponent.status = "end";
 			ws.opponent.canplay = false;
+			ws.opponent.time = null;
 			ws.opponent.opponent = null;
 			ws.opponent.gameid = null;
 			ws.opponent = null;
 			ws.canplay = false;
-			ws.gameid = null;
-			ws.status = "end";
-		} else if(update['map'][0] && update['map'][1] && update['map'][2] && update['map'][3] && update['map'][4] && update['map'][5] && update['map'][6] && update['map'][7] && update['map'][8]) {
-			ws.send('{"status":"tie"}');
-			ws.opponent.send('{"status":"tie", "row":'+ message + '}');
-			ws.opponent.status = "end";
-			ws.opponent.canplay = false;
-			ws.opponent.opponent = null;
-			ws.opponent.gameid = null;
-			ws.opponent = null;
-			ws.canplay = false;
+			ws.time = null;
 			ws.gameid = null;
 			ws.status = "end";
 		} else {
+			ws.send('{"status":"you", "row":'+ message + '}');
 			ws.opponent.send('{"status":"played", "row":'+ message + '}');
 			ws.opponent.canplay = true;
+			ws.opponent.time = new Date();
 			ws.canplay = false;
+			ws.time = null;
 		}
 	});
 
@@ -94,12 +89,54 @@ wss.on('connection', function connection(ws) {
 });
 
 setInterval(function () {
+	wss.clients.forEach(function each(ws) {
+		if(ws.isAlive == false || ws.canplay == false) return;
+		if(((new Date() - ws.time) / 1000) >= 15) {
+			ws.canplay = false;
+			var found = games.find(function(item) {
+				return item.gameid == ws.gameid;
+			});
+			var update = found;
+			var indexes = Array.from(Array(Object.keys(update['map']).length).keys());
+			var availableIndexes = indexes.filter((index) => update['map'][index] == null);
+			var selectedIndex = availableIndexes[Math.floor(Math.random()* availableIndexes.length)];
+			console.log(selectedIndex);
+			update['map'][selectedIndex] = ws.type;
+			games.replace(found, update);
+			var cg = checkgame(found['map']);
+			if(cg == "win" || cg == "tie") {
+				ws.send('{"status":"' + (cg == "win" ? "winner" : "tie" ) + '"}');
+				ws.opponent.send('{"status":"' + (cg == "win" ? "loser" : "tie" ) + '", "row":'+ selectedIndex + '}');
+				ws.opponent.status = "end";
+				ws.opponent.canplay = false;
+				ws.opponent.time = null;
+				ws.opponent.opponent = null;
+				ws.opponent.gameid = null;
+				ws.opponent = null;
+				ws.canplay = false;
+				ws.time = null;
+				ws.gameid = null;
+				ws.status = "end";
+			} else {
+				ws.send('{"status":"you", "row":'+ selectedIndex + '}');
+				ws.opponent.send('{"status":"played", "row":'+ selectedIndex + '}');
+				ws.opponent.canplay = true;
+				ws.opponent.time = new Date();
+				ws.canplay = false;
+				ws.time = null;
+			}
+		}
+	});
+}, 1000);
+
+setInterval(function () {
 	// Verifica se todos os usuarios estão conectado com o servidor e caso alguma usuario não retorne o ping encerra a sessão
 	wss.clients.forEach(function each(ws) {
 		if (ws.isAlive == false) {
 			if(ws.opponent) {
 				ws.opponent.send('{"status":"closed"}');
 				ws.opponent.canplay = false;
+				ws.opponent.time = null;
 				ws.opponent.opponent = null;
 				ws.opponent.gameid = null;
 				setTimeout(function () {
@@ -129,8 +166,9 @@ setInterval(function () {
 				client.status = 'found';
 				client.type = fplayer;
 				client.opponent = last;
-				client.send('{"status":"found", "you":"' + fplayer + '", "canplay":true, "player":"' + last + '"}');
+				client.send('{"status":"found", "you":"' + fplayer + '", "canplay":true, "player":"' + last.id + '"}');
 				client.canplay = true;
+				client.time = new Date();
 				client.gameid = gameid;
 				last.send('{"status":"found", "you":"' + splayer + '", "canplay":false, "player":"' + client.id + '"}');
 				last.status = 'found';
@@ -141,7 +179,7 @@ setInterval(function () {
 			}
 		}
 	});
-}, 1500);
+}, 2500);
 
 server.listen(process.env.PORT || 80, () => {
     console.log(`Servidor iniciado :)`);

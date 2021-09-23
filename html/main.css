@@ -48,14 +48,11 @@ body {
 }
 
 .game.op span {
-	opacity:1;
-	animation-name: fadein;
-	animation-duration: 0.2s;
+	opacity:.5;
 }
 
-@keyframes fadein {
-  from {opacity:0;}
-  to {opacity:1;}
+.game.op span.played {
+	opacity:1;
 }
 
 .loading.box {
@@ -83,15 +80,6 @@ body {
 	font-size:20px;
 	text-align:center;
 	display:block;
-}
-
-.debug.ping {
-	position:fixed;
-	bottom:20px;
-	right:20px;
-	font-family:'Source Sans Pro', sans-serif;
-	font-size:20px;
-	color:#fff;
 }
 
 .match.display {
@@ -146,4 +134,22 @@ body {
 	bottom:22px;
 	left:50%;
 	transform:translateX(-50%);
+}
+
+.game.timelimit {
+	position:fixed;
+	bottom:20px;
+	left:20px;
+	font-family:'Source Sans Pro', sans-serif;
+	font-size:20px;
+	color:#fff;
+}
+
+.debug.ping {
+	position:fixed;
+	bottom:20px;
+	right:20px;
+	font-family:'Source Sans Pro', sans-serif;
+	font-size:20px;
+	color:#fff;
 }

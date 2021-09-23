@@ -2,13 +2,34 @@ function str_pad_left(string,pad,length) {
     return (new Array(length+1).join(pad)+string).slice(-length);
 }
 
-// Fiz isso pra detectar automaticamente se é pra utilizar o WebSocket no modo HTTPS ou no modo HTTP :)
+// Detecta SSL
 var protocolo = "ws";
 if(location.protocol == "https:") protocolo = "wss";
 
 var x, matchtime, you, canplay, symb;
 var socket = new WebSocket(protocolo + "://" + window.location.hostname);
 $('.loading.text').text('Tentando se conectar com o servidor...');
+
+var timelimit_t;
+function timelimit() {
+	clearInterval(timelimit_t);
+	if(canplay == false) {
+		clearInterval(timelimit_t);
+		$('.game.timelimit').fadeOut(250);
+	} else {
+		var tempo = 1;
+		$('.game.timelimit').text('15s restantes').fadeIn(250);
+		timelimit_t = setInterval(function () {
+			if(tempo == 15) {
+				clearInterval(timelimit_t);
+				canplay = false;
+				var audio = new Audio('lost_time.mp3').play();
+			} else if(tempo >= 10) var audio = new Audio('timer.mp3').play();
+			$('.game.timelimit').text((15 - tempo) + 's restantes');
+			tempo++;
+		}, 1000);
+	}
+}
 
 socket.onopen = function(e) {
 	console.error("[open] Connection established");
@@ -45,6 +66,7 @@ socket.onmessage = function(event) {
 			if(data['canplay'] == true) {
 				canplay = true;
 				$('.game.status').html('<span>Sua vez de jogar</span>');
+				timelimit();
 			} else {
 				canplay = false;
 				$('.game.status').html('<span>Vez do oponente</span>');
@@ -59,13 +81,26 @@ socket.onmessage = function(event) {
 		canplay = false;
 		$('.loading.text').html('O outro player fechou o jogo, procurando uma nova partida...');
 		$('.loading.box').fadeIn(400);
+		timelimit();
+	}
+	if(data['status'] == "you") {
+		timelimit();
+		if($('.'+btoa(data['row']).replace('==',''))[0]) {
+			$('.'+btoa(data['row']).replace('==','')).css('opacity','1');
+		} else {
+			$('[row=' + data['row'] + ']').html('<span class="played">' + you + '</span>');
+			canplay = false;
+			$('.game.status').html('<span>Vez do oponente</span>');
+			timelimit();
+		}
 	}
 	if(data['status'] == "played") {
 		symb = "x";
 		if(you == "x") symb = "o";
-		$('.game.op[row=' + data['row'] + ']').html('<span>' + symb + '</span>');
+		$('.game.op[row=' + data['row'] + ']').html('<span class="played">' + symb + '</span>');
 		canplay = true;
 		$('.game.status').html('<span>Sua vez de jogar</span>');
+		timelimit();
 		var audio = new Audio('sound.mp3');
 		audio.play();
 	}
@@ -76,6 +111,9 @@ socket.onmessage = function(event) {
 		canplay = false;
 		$('.match.info').text('Você perdeu!');
 		$('.match.display').fadeIn(400);
+		timelimit();
+		var audio = new Audio('lose.mp3');
+		audio.play();
 	}
 	if(data['status'] == "winner") {
 		symb = "x";
@@ -84,13 +122,18 @@ socket.onmessage = function(event) {
 		canplay = false;
 		$('.match.info').text('Você ganhou!');
 		$('.match.display').fadeIn(400);
+		timelimit();
+		var audio = new Audio('win.mp3');
+		audio.play();
 	}
 	if(data['status'] == "tie") {
 		symb = "x";
 		if(you == "x") symb = "o";
+		canplay = false;
 		$('.game.op[row=' + data['row'] + ']').html('<span>' + symb + '</span>');
 		$('.match.info').text('Empate!');
 		$('.match.display').fadeIn(400);
+		timelimit();
 	}
 };
 
@@ -108,7 +151,7 @@ socket.onerror = function(error) {
 $('.game.op').on('click', (e) => {
 	if(canplay == false) return;
 	if($(e['target']).text()) return;
-	$(e['target']).html('<span>' + you + '</span>');
+	$(e['target']).html('<span class="' + btoa($(e['target']).attr('row')).replace('==','') + '" style="opacity:.5">' + you + '</span>');
 	socket.send($(e['target']).attr('row'));
 	canplay = false;
 	$('.game.status').html('<span>Vez do oponente</span>');
