@@ -15,16 +15,21 @@ function timelimit() {
 	clearInterval(timelimit_t);
 	if(canplay == false) {
 		clearInterval(timelimit_t);
-		$('.game.timelimit').fadeOut(250);
+		$('.game.timelimit').css({'bottom':'-20px','opacity':0});
 	} else {
 		var tempo = 1;
-		$('.game.timelimit').text('15s restantes').fadeIn(250);
+		$('.game.timelimit').text('15s restantes').css({'bottom':'20px','opacity':1});
 		timelimit_t = setInterval(function () {
 			if(tempo == 15) {
 				clearInterval(timelimit_t);
 				canplay = false;
 				var audio = new Audio('lost_time.mp3').play();
-			} else if(tempo >= 10) var audio = new Audio('timer.mp3').play();
+			} else if(tempo >= 10) {
+				var audio = new Audio('timer.mp3').play();
+				$('.game.timelimit').css({"transform":"scale(1.1)"}).delay(500).queue(function(){
+					$(this).css({"transform":"scale(1)"}).dequeue();
+				});
+			}
 			$('.game.timelimit').text((15 - tempo) + 's restantes');
 			tempo++;
 		}, 1000);
@@ -34,6 +39,18 @@ function timelimit() {
 socket.onopen = function(e) {
 	console.error("[open] Connection established");
 	$('.loading.text').text('Conexão estabelecida');
+};
+
+var atualizarJogo = function (symb, data) {
+	symb = "x";
+	if(you == "x") symb = "o";
+	$(`<img src="img/${symb}.png" alt="${symb}">`).appendTo('.game.op[row=' + data['row'] + ']').hide().fadeIn(400);
+};
+
+var modalStatus = function (texto) {
+	$('.game.box').css('opacity','.4');
+	$('.match.info').text(texto);
+	$('.match.display').fadeIn(400);
 };
 
 socket.onmessage = function(event) {
@@ -62,7 +79,7 @@ socket.onmessage = function(event) {
 		$('.loading.text').text('Partida encontrada');
 		setTimeout(function () {
 			$('.loading.box').fadeOut(400);
-			$('.game.box').css('transform','translate(-50%,-50%) rotate3d(1, 1, 0,0deg)');
+			$('.game.box').css({'transform':'translate(-50%,-50%) rotate3d(1, 1, 0,0deg) scale(1)',opacity:1});
 			if(data['canplay'] == true) {
 				canplay = true;
 				$('.game.status').html('<span>Sua vez de jogar</span>');
@@ -76,7 +93,7 @@ socket.onmessage = function(event) {
 		}, 800);
 	}
 	if(data['status'] == "closed") {
-		$('.game.box').css('transform','translate(-50%,-50%) rotate3d(1, 1, 0,-90deg)');
+		$('.game.box').css({'transform':'translate(-50%,-50%) rotate3d(1, 1, 0,-90deg) scale(.5)','opacity':0});
 		$('.game.op').text("");
 		canplay = false;
 		$('.loading.text').html('O outro player fechou o jogo, procurando uma nova partida...');
@@ -88,16 +105,14 @@ socket.onmessage = function(event) {
 		if($('.'+btoa(data['row']).replace('==',''))[0]) {
 			$('.'+btoa(data['row']).replace('==','')).css('opacity','1');
 		} else {
-			$('[row=' + data['row'] + ']').html('<span class="played">' + you + '</span>');
+			atualizarJogo(symb, data);
 			canplay = false;
 			$('.game.status').html('<span>Vez do oponente</span>');
 			timelimit();
 		}
 	}
 	if(data['status'] == "played") {
-		symb = "x";
-		if(you == "x") symb = "o";
-		$('.game.op[row=' + data['row'] + ']').html('<span class="played">' + symb + '</span>');
+		atualizarJogo(symb, data);
 		canplay = true;
 		$('.game.status').html('<span>Sua vez de jogar</span>');
 		timelimit();
@@ -105,34 +120,25 @@ socket.onmessage = function(event) {
 		audio.play();
 	}
 	if(data['status'] == "loser") {
-		symb = "x";
-		if(you == "x") symb = "o";
-		$('.game.op[row=' + data['row'] + ']').html('<span>' + symb + '</span>');
+		atualizarJogo(symb, data);
 		canplay = false;
-		$('.match.info').text('Você perdeu!');
-		$('.match.display').fadeIn(400);
+		modalStatus('Você perdeu!');
 		timelimit();
 		var audio = new Audio('lose.mp3');
 		audio.play();
 	}
 	if(data['status'] == "winner") {
-		symb = "x";
-		if(you == "x") symb = "o";
-		$('.game.op[row=' + data['row'] + ']').html('<span>' + symb + '</span>');
+		atualizarJogo(symb, data);
 		canplay = false;
-		$('.match.info').text('Você ganhou!');
-		$('.match.display').fadeIn(400);
+		modalStatus('Você ganhou!');
 		timelimit();
 		var audio = new Audio('win.mp3');
 		audio.play();
 	}
 	if(data['status'] == "tie") {
-		symb = "x";
-		if(you == "x") symb = "o";
+		atualizarJogo(symb, data);
 		canplay = false;
-		$('.game.op[row=' + data['row'] + ']').html('<span>' + symb + '</span>');
-		$('.match.info').text('Empate!');
-		$('.match.display').fadeIn(400);
+		modalStatus('Empate!');
 		timelimit();
 	}
 };
@@ -151,7 +157,7 @@ socket.onerror = function(error) {
 $('.game.op').on('click', (e) => {
 	if(canplay == false) return;
 	if($(e['target']).text()) return;
-	$(e['target']).html('<span class="' + btoa($(e['target']).attr('row')).replace('==','') + '" style="opacity:.5">' + you + '</span>');
+	$(e['target']).html(`<img class="custom ${btoa($(e['target']).attr('row')).replace('==','')}" src="img/${you}.png" style="opacity:.5">`);
 	socket.send($(e['target']).attr('row'));
 	canplay = false;
 	$('.game.status').html('<span>Vez do oponente</span>');
@@ -159,7 +165,7 @@ $('.game.op').on('click', (e) => {
 
 $('.match.btn[go=play]').on('click', () => {
 	$('.match.display').fadeOut(200);
-	$('.game.box').css('transform','translate(-50%,-50%) rotate3d(1, 1, 0,-90deg)');
+	$('.game.box').css({'transform':'translate(-50%,-50%) rotate3d(1, 1, 0,-90deg) scale(.5)','opacity':0});
 	$('.game.op').css('opacity','0');
 	setTimeout(function () {
 		$('.game.op').text("");

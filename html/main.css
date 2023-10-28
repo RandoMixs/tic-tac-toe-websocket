@@ -3,20 +3,28 @@ body {
 	background:#222;
 }
 
+.logo {
+	position: fixed;
+	top: 15px;
+	left: 50%;
+	transform: translateX(-50%);
+	z-index: 9999;
+}
+
 .game.box {
 	position:fixed;
 	top:50%;
 	left:50%;
-	transform:translate(-50%,-50%) rotate3d(1, 1, 0,90deg);
-	background:#333;
-	width:484px;
-	height:544px;
-	transition:all 0.4s;
+	transform:translate(-50%,-50%) rotate3d(1, 1, 0,90deg) scale(.5);
+	transition: transform .6s, opacity .4s;
+	opacity: 0;
 }
 
 .game.row {
-	display: flex;
-	border-bottom:#222 solid 5px;
+	display: grid;
+    grid-template-columns: auto auto auto;
+	margin-bottom: 5px;
+	gap: 5px;
 }
 
 .game.info, .game.status {
@@ -30,29 +38,45 @@ body {
 }
 
 .game.op {
-	position:relative;
+	background: #2d2d2d;
 	color:#fff;
-	font-family: 'Raleway', sans-serif;
-	font-size:120px;
-	width:160px;
-	height:160px;
-	border-right:#222 solid 5px;
 	cursor:pointer;
+	width: 30vw;
+    height: 30vw;
+    max-width: 180px;
+    max-height: 180px;
+	transition: background .3s;
+	-webkit-tap-highlight-color: transparent;
 }
 
-.game.op span, .game.info span, .game.status span {
+.game.op:active {
+	background: #373737;
+}
+
+.game.info span, .game.status span {
 	position:absolute;
 	top:50%; left:50%;
 	transform:translate(-50%,-50%);
+}
+
+.game.info span, .game.status span {
 	transition:opacity 0.2s;
 }
 
-.game.op span {
-	opacity:.5;
+.game.op img {
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
 }
 
-.game.op span.played {
-	opacity:1;
+.game.op img.custom {
+	transition: opacity .2s;
+	animation: fadeIn50 .2s;
+}
+
+@keyframes fadeIn50 {
+	from {opacity:0}
+	to {opacity:.5}
 }
 
 .loading.box {
@@ -99,7 +123,14 @@ body {
 	background:#f7f7f7;
 	width: 250px;
     height: 180px;
-	border-radius:15px;
+	border-radius: 15px;
+	animation: modalFade .4s;
+}
+
+@keyframes modalFade {
+	0% {transform:translate(-50%,-50%) scale(.6);opacity:0}
+	50%{transform:translate(-50%,-50%) scale(1.1);opacity:1}
+	100%{transform:translate(-50%,-50%) scale(1)}
 }
 
 .match.info {
@@ -138,18 +169,23 @@ body {
 
 .game.timelimit {
 	position:fixed;
-	bottom:20px;
-	left:20px;
+	bottom:-20px;
+	width: 100%;
+	text-align: center;
 	font-family:'Source Sans Pro', sans-serif;
+	transition: opacity .3s, bottom .3s, transform .5s;
 	font-size:20px;
+	opacity: 0;
 	color:#fff;
 }
 
 .debug.ping {
-	position:fixed;
-	bottom:20px;
-	right:20px;
-	font-family:'Source Sans Pro', sans-serif;
-	font-size:20px;
-	color:#fff;
+	position: fixed;
+    top: 85px;
+    width: 100%;
+    text-align: center;
+    font-family: 'Source Sans Pro', sans-serif;
+    font-size: 18px;
+    color: #fff;
+	z-index: 9999;
 }
