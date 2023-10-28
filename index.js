@@ -38,7 +38,7 @@ wss.on('connection', function connection(ws) {
 			}
 		}
 		
-		if(message.replace(/\D/g, "") >= 9) return ws.terminate();
+		if(message.replace(/\D/g, "") >= 9 || isNaN(parseInt(message))) return ws.terminate();
 		if(ws.canplay == false) return ws.terminate();
 		var found = games.find(function(item) {
 			return item.gameid == ws.gameid;
@@ -100,7 +100,6 @@ setInterval(function () {
 			var indexes = Array.from(Array(Object.keys(update['map']).length).keys());
 			var availableIndexes = indexes.filter((index) => update['map'][index] == null);
 			var selectedIndex = availableIndexes[Math.floor(Math.random()* availableIndexes.length)];
-			console.log(selectedIndex);
 			update['map'][selectedIndex] = ws.type;
 			games.replace(found, update);
 			var cg = checkgame(found['map']);
