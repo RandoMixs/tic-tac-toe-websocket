@@ -23,9 +23,9 @@ function timelimit() {
 			if(tempo == 15) {
 				clearInterval(timelimit_t);
 				canplay = false;
-				var audio = new Audio('lost_time.mp3').play();
+				new Audio('lost_time.mp3').play();
 			} else if(tempo >= 10) {
-				var audio = new Audio('timer.mp3').play();
+				new Audio('timer.mp3').play();
 				$('.game.timelimit').css({"transform":"scale(1.1)"}).delay(500).queue(function(){
 					$(this).css({"transform":"scale(1)"}).dequeue();
 				});
@@ -116,24 +116,21 @@ socket.onmessage = function(event) {
 		canplay = true;
 		$('.game.status').html('<span>Sua vez de jogar</span>');
 		timelimit();
-		var audio = new Audio('sound.mp3');
-		audio.play();
+		new Audio('sound.mp3').play();
 	}
 	if(data['status'] == "loser") {
 		atualizarJogo(symb, data);
 		canplay = false;
 		modalStatus('Você perdeu!');
 		timelimit();
-		var audio = new Audio('lose.mp3');
-		audio.play();
+		new Audio('lose.mp3').play();
 	}
 	if(data['status'] == "winner") {
 		atualizarJogo(symb, data);
 		canplay = false;
 		modalStatus('Você ganhou!');
 		timelimit();
-		var audio = new Audio('win.mp3');
-		audio.play();
+		new Audio('win.mp3').play();
 	}
 	if(data['status'] == "tie") {
 		atualizarJogo(symb, data);
@@ -156,7 +153,7 @@ socket.onerror = function(error) {
 
 $('.game.op').on('click', (e) => {
 	if(canplay == false) return;
-	if($(e['target']).text()) return;
+	if($(e['target']).find('img').length > 0) return;
 	$(e['target']).html(`<img class="custom ${btoa($(e['target']).attr('row')).replace('==','')}" src="img/${you}.png" style="opacity:.5">`);
 	socket.send($(e['target']).attr('row'));
 	canplay = false;
@@ -168,7 +165,7 @@ $('.match.btn[go=play]').on('click', () => {
 	$('.game.box').css({'transform':'translate(-50%,-50%) rotate3d(1, 1, 0,-90deg) scale(.5)','opacity':0});
 	$('.game.op').css('opacity','0');
 	setTimeout(function () {
-		$('.game.op').text("");
+		$('.game.op').html("");
 		$('.game.op').css('opacity','1');
 		socket.send('Play');
 	}, 200);
