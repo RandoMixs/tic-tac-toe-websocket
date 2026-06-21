@@ -25,8 +25,5 @@ module.exports = {
 	},
 	'sample': Array.prototype.sample = function(){
 		return this[Math.floor(Math.random()*this.length)];
-	},
-	'replace': Array.prototype.replace = function(t, v) {
-		if(this.indexOf(t)!= -1) this[this.map((e, i) => [i, e]).filter(e => e[1] == t)[0][0]] = v;
 	}
 }
